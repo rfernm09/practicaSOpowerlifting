@@ -34,3 +34,4 @@ void inicializaCampeonato() {
 		atletas[i].necesita_beber=0;
 	}
 }
+EDITAR
