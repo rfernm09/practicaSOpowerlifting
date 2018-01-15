@@ -626,6 +626,13 @@ void *accionesTarima (void *arg)
 
 			//dentro de su propia cola
 			int j;
+			
+			//bloqueo el atleta:
+			if (pthread_mutex_lock(&semaforo_atletas)!=0)
+				{
+					perror("Error en el bloqueo del semáforo de los atletas.\n");
+					exit(-1);
+				}
 		
 			for(j=1; j<=numTarimas; j++)
 			{
@@ -639,6 +646,13 @@ void *accionesTarima (void *arg)
 						}
 					}
 				}
+			}
+
+			// Se desbloquea el semáforo, además se comprueba si falla.
+			if (pthread_mutex_unlock(&semaforo_atletas)!=0)
+			{
+				perror("Error en el desbloqueo del semáforo de los atletas.\n");
+				exit(-1);
 			}
 		
 			if(atl_tar[numero-1]!=10000)
@@ -666,7 +680,23 @@ void *accionesTarima (void *arg)
 		
 		if(atleta_cogido!=10000)
 		{
+			//bloqueo el atleta:
+			if (pthread_mutex_lock(&semaforo_atletas)!=0)
+				{
+					perror("Error en el bloqueo del semáforo de los atletas.\n");
+					exit(-1);
+				}
+			
 			atletas[atleta_cogido].ha_competido=1;
+
+			//
+
+			if (pthread_mutex_unlock(&semaforo_atletas)!=0)
+				{
+					perror("Error en el desbloqueo del semáforo de los atletas.\n");
+					exit(-1);
+				}   //
+
 			comportamiento = calculaAleatorios(1,10); // Número aleatorio para calcular el comportamiento.
 		
 			while(atletas[atleta_cogido].calentamiento==0)
@@ -682,6 +712,9 @@ void *accionesTarima (void *arg)
 				puntuacion = calculaAleatorios(60,300);
 			
 				atletas[atleta_cogido].puntuacion = puntuacion;
+				
+				// Finaliza el atleta que está participando por tener ya puntos
+				atletas[atleta_cogido].ha_competido=2;
 
 				// Se escribe en el log.
 				sprintf(id, "Juez %d", numero);  
@@ -1033,11 +1066,11 @@ void  writeLogMessage(char *id, char *msg)
 	time_t  now = time (0);
 	struct  tm *tlocal = localtime (&now);
 	char  stnow [19];
-	strftime(stnow , 19, " %d/ %m/ %y  %H: %M: %S", tlocal);
+	strftime(stnow, 19, " %d/ %m/ %y  %H: %M: %S ", tlocal);
 
 	// Se escribe en el fichero log llamado registroTiempos.log.
 	registro = fopen(nombreArchivo, "a");
-	fprintf(registro , "[ %s]  %s:  %s\n", stnow , id, msg);
+	fprintf(registro , "[%s]  %s:  %s\n", stnow , id, msg);
 	fclose(registro);
 }
 
